@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupon Discount with RM 20 Limit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .cart {
+            margin-bottom: 20px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .cart-item span {
+            font-size: 16px;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+        .total, .discount, .remaining-coupon {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .final-total {
+            margin-top: 10px;
+            font-size: 20px;
+            color: green;
+        }
+        .coupon-message {
+            color: blue;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .applied-items {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #qrCode {
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.0/qrious.min.js"></script>
+</head>
+<body>
+
+    <h2>Your Cart</h2>
+    <div class="cart">
+        <div class="cart-item">
+            <span>Item 1 (RM 5):</span>
+            <span><input type="number" id="item1" value="0" min="0" max="10"></span>
+        </div>
+        <div class="cart-item">
+            <span>Item 2 (RM 10):</span>
+            <span><input type="number" id="item2" value="0" min="0" max="10"></span>
+        </div>
+        <div class="cart-item">
+            <span>Item 3 (RM 15):</span>
+            <span><input type="number" id="item3" value="0" min="0" max="10"></span>
+        </div>
+    </div>
+
+    <div class="error" id="errorMessage"></div>
+    <div class="total" id="totalAmount">Total: RM 0</div>
+    <div class="discount" id="discountAmount">Discount: RM 0</div>
+    <div class="remaining-coupon" id="remainingCouponAmount">Remaining Coupon Value: RM 20</div>
+    <div class="final-total" id="finalTotalAmount">Final Total: RM 0</div>
+
+    <button id="applyCouponBtn" onclick="applyCoupon()">Apply Coupon</button>
+
+    <div class="coupon-message" id="couponMessage"></div>
+    <div class="applied-items" id="appliedItems"></div>
+
+    <canvas id="qrCode" width="150" height="150"></canvas>
+
+    <script>
+        const prices = {
+            item1: 5,
+            item2: 10,
+            item3: 15
+        };
+        const maxCoupon = 20;  // Maximum coupon limit
+        let couponBalance = maxCoupon;  // Initial coupon balance
+
+        // Calculate the total amount
+        function calculateTotal() {
+            let item1Count = document.getElementById('item1').value;
+            let item2Count = document.getElementById('item2').value;
+            let item3Count = document.getElementById('item3').value;
+
+            let total = (item1Count * prices.item1) + (item2Count * prices.item2) + (item3Count * prices.item3);
+            return total;
+        }
+
+        // Update total, discount, and final total dynamically
+        function updateTotals() {
+            let total = calculateTotal();
+            let errorMessage = document.getElementById('errorMessage');
+
+            if (total <= maxCoupon) {
+                errorMessage.innerText = '';  // Clear error message if valid
+                document.getElementById('totalAmount').innerText = 'Total: RM ' + total;
+                document.getElementById('discountAmount').innerText = 'Discount: RM 0';
+                document.getElementById('remainingCouponAmount').innerText = 'Remaining Coupon Value: RM ' + couponBalance; // Show current coupon balance
+                document.getElementById('finalTotalAmount').innerText = 'Final Total: RM ' + total;
+            } else {
+                errorMessage.innerText = "Total cannot exceed RM 20. Please adjust your cart.";
+                document.getElementById('totalAmount').innerText = 'Total: RM ' + total;
+                document.getElementById('discountAmount').innerText = 'Discount: RM 0';
+                document.getElementById('remainingCouponAmount').innerText = 'Remaining Coupon Value: RM ' + couponBalance; // Show current coupon balance
+                document.getElementById('finalTotalAmount').innerText = 'Final Total: RM ' + total;
+            }
+        }
+
+        // Generate QR code for final total
+        function generateQRCode(data) {
+            const qr = new QRious({
+                element: document.getElementById('qrCode'),
+                value: data,
+                size: 150 // QR code size
+            });
+        }
+
+        // Apply the coupon and show confirmation
+        function applyCoupon() {
+            let total = calculateTotal();
+            if (total <= maxCoupon && couponBalance > 0) {
+                let discount = Math.min(total, couponBalance); // Discount based on the total or available coupon balance
+                couponBalance -= discount; // Decrease coupon balance
+                document.getElementById('discountAmount').innerText = 'Discount: RM ' + discount;
+                document.getElementById('remainingCouponAmount').innerText = 'Remaining Coupon Value: RM ' + couponBalance; // Update remaining coupon value
+                
+                // Final total after discount
+                let finalTotal = total - discount;
+                document.getElementById('finalTotalAmount').innerText = 'Final Total: RM ' + finalTotal;
+
+                // Display the applied items and their prices
+                let appliedItems = [];
+                if (document.getElementById('item1').value > 0) {
+                    appliedItems.push(`Item 1 (RM 5) x ${document.getElementById('item1').value}`);
+                }
+                if (document.getElementById('item2').value > 0) {
+                    appliedItems.push(`Item 2 (RM 10) x ${document.getElementById('item2').value}`);
+                }
+                if (document.getElementById('item3').value > 0) {
+                    appliedItems.push(`Item 3 (RM 15) x ${document.getElementById('item3').value}`);
+                }
+
+                // Join the applied items into a single string and display
+                document.getElementById('appliedItems').innerText = `You have applied the coupon to: ${appliedItems.join(', ')}`;
+                document.getElementById('couponMessage').innerText = 'Coupon Applied! You have bought items using the RM 20 coupon.';
+                
+                // Generate QR code for the final total
+                generateQRCode(`Final Total: RM ${finalTotal}`);
+            } else {
+                document.getElementById('couponMessage').innerText = 'Coupon cannot be applied. Either the total exceeds RM 20 or the coupon is exhausted.';
+            }
+        }
+
+        // Attach change event to input fields to update total automatically
+        document.getElementById('item1').addEventListener('input', updateTotals);
+        document.getElementById('item2').addEventListener('input', updateTotals);
+        document.getElementById('item3').addEventListener('input', updateTotals);
+
+        // Initial update of totals
+        updateTotals();
+    </script>
+
+</body>
+</html>
